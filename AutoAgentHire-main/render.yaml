@@ -1,0 +1,45 @@
+services:
+  - type: web
+    name: linkedin-automation-backend
+    env: python
+    region: oregon
+    # MINIMUM: standard (2GB RAM). Free tier (512MB) will OOM during startup.
+    # sentence-transformers/PyTorch is excluded via requirements-prod.txt,
+    # but faiss + sklearn + langgraph still need ~1.5GB at peak startup.
+    plan: standard
+    rootDir: .
+    buildCommand: "./build.sh"
+    startCommand: "PYTHONPATH=. python -m uvicorn backend.main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: PYTHONUNBUFFERED
+        value: "true"
+      - key: PYTHON_VERSION
+        value: "3.11.11"
+      - key: PLAYWRIGHT_BROWSERS_PATH
+        value: "/opt/render/.cache/ms-playwright"
+      - key: APP_ENV
+        value: "production"
+      - key: DEBUG
+        value: "false"
+      - key: API_RELOAD
+        value: "false"
+      # Disable heavy local vector store on cloud — use Qdrant Cloud instead
+      - key: DISABLE_LOCAL_VECTOR_STORE
+        value: "true"
+      # Set these in the Render dashboard (do NOT commit secrets to this file):
+      # - key: DATABASE_URL           (Supabase pooler: postgresql://postgres.REF:PASS@aws-1-REGION.pooler.supabase.com:6543/postgres)
+      # - key: SYNC_DATABASE_URL      (same as DATABASE_URL)
+      # - key: SECRET_KEY             (generate: python -c "import secrets; print(secrets.token_urlsafe(32))")
+      # - key: GITHUB_API_KEY         (GitHub PAT with models scope — primary AI provider)
+      # - key: GROQ_API_KEY           (Groq API key — fast free fallback)
+      # - key: OPENAI_API_KEY         (optional — third AI fallback)
+      # - key: GEMINI_API_KEY         (optional — Google Gemini)
+      # - key: QDRANT_URL             (Qdrant Cloud cluster URL)
+      # - key: QDRANT_API_KEY         (Qdrant Cloud API key)
+      # - key: SUPABASE_URL           (optional — Supabase project URL)
+      # - key: SUPABASE_KEY           (optional — Supabase anon key)
+      # - key: LINKEDIN_EMAIL
+      # - key: LINKEDIN_PASSWORD
+      # - key: CORS_ORIGINS           (comma-separated: https://yourapp.vercel.app)
+      # - key: GOOGLE_CLIENT_ID       (optional — Google OAuth)
+    autoDeploy: true
